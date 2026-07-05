@@ -1,0 +1,159 @@
+// ==============================================
+// Prisma Schema — Realtime Chat Backend
+// ==============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------
+// Enums
+// ------------------------------------------------
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+}
+
+enum MessageStatus {
+  SENDING
+  SENT
+  DELIVERED
+  READ
+}
+
+// ------------------------------------------------
+// User
+// ------------------------------------------------
+
+model User {
+  id              String   @id @default(uuid())
+  phoneNumber     String   @unique
+  username        String   @unique
+  fullName        String
+  password        String
+  bio             String?
+  avatarUrl       String?
+  avatarPublicId  String?
+  isOnline        Boolean  @default(false)
+  lastSeen        DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Refresh tokens (hashed) for JWT refresh flow
+  refreshTokens   RefreshToken[]
+
+  // Conversations this user participates in
+  participants    ConversationParticipant[]
+
+  // Messages sent by this user
+  messages        Message[]              @relation("SenderMessages")
+
+  // Per-message delivery/read receipts belonging to this user
+  messageStatuses MessageStatusEntry[]
+
+  @@index([username])
+  @@map("users")
+}
+
+// ------------------------------------------------
+// Refresh Token
+// Stored hashed, one row per active session/device.
+// ------------------------------------------------
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------
+// Conversation (always exactly 2 participants — private chat only)
+// ------------------------------------------------
+
+model Conversation {
+  id           String   @id @default(uuid())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+// Join table between User <-> Conversation
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+
+  // Tracks the last message this user has read, for unread counts
+  lastReadAt     DateTime?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+// ------------------------------------------------
+// Message
+// ------------------------------------------------
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  senderId       String
+  text           String?
+  fileUrl        String?
+  filePublicId   String?
+  type           MessageType   @default(TEXT)
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User          @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  statuses       MessageStatusEntry[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// Per-recipient delivery/read status for a message.
+// In a 1:1 chat there's only one "other" recipient, but this model
+// scales cleanly if group chats are ever added later.
+model MessageStatusEntry {
+  id        String        @id @default(uuid())
+  messageId String
+  userId    String
+  status    MessageStatus @default(SENT)
+  updatedAt DateTime      @updatedAt
+
+  message   Message       @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_status_entries")
+}
