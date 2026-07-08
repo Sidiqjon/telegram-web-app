@@ -7,38 +7,20 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global validation — every DTO is automatically validated & sanitized
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // strip properties not defined in the DTO
+      whitelist: true, 
       forbidNonWhitelisted: true,
-      transform: true, // auto-transform payloads into DTO instances
+      transform: true, 
     }),
   );
 
-  // Global exception filter for consistent error responses
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // CORS — required since the React frontend runs on a different origin
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
     credentials: true,
   });
-
-  // Swagger / OpenAPI docs
-  // const config = new DocumentBuilder()
-  //   .setTitle('Chat App API')
-  //   .setDescription('Realtime Telegram-like chat')
-  //   .setVersion('1.0')
-  //   .addServer('/api')
-  //   .addBearerAuth()
-  //   .build();
-  // const document = SwaggerModule.createDocument(app, config);
-  // SwaggerModule.setup('api/docs', app, document);
-
-  // app.setGlobalPrefix('api', {
-  //   exclude: ['api/docs'],
-  // });
 
   app.setGlobalPrefix('api');
 
@@ -46,13 +28,14 @@ async function bootstrap() {
     .setTitle('Chat App API')
     .setDescription('Realtime Telegram-like chat')
     .setVersion('1.0')
-    .addServer('/api')
     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/docs', app, document, {
+    useGlobalPrefix: true,
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
