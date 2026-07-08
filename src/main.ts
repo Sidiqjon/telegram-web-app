@@ -26,18 +26,33 @@ async function bootstrap() {
   });
 
   // Swagger / OpenAPI docs
+  // const config = new DocumentBuilder()
+  //   .setTitle('Chat App API')
+  //   .setDescription('Realtime Telegram-like chat')
+  //   .setVersion('1.0')
+  //   .addServer('/api')
+  //   .addBearerAuth()
+  //   .build();
+  // const document = SwaggerModule.createDocument(app, config);
+  // SwaggerModule.setup('api/docs', app, document);
+
+  // app.setGlobalPrefix('api', {
+  //   exclude: ['api/docs'],
+  // });
+
+  app.setGlobalPrefix('api');
+
   const config = new DocumentBuilder()
     .setTitle('Chat App API')
-    .setDescription('Realtime Telegram-like chat backend')
+    .setDescription('Realtime Telegram-like chat')
     .setVersion('1.0')
+    .addServer('/api')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
 
-  app.setGlobalPrefix('api', {
-    exclude: ['api/docs'],
-  });
+  const document = SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
