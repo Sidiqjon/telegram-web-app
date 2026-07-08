@@ -22,20 +22,18 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('api');
-
+  
   const config = new DocumentBuilder()
-    .setTitle('Chat App API')
-    .setDescription('Realtime Telegram-like chat')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
+  .setTitle('Chat App API')
+  .setDescription('Realtime Telegram-like chat')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .build();
+  
+  app.setGlobalPrefix('api');
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api/docs', app, document, {
-    useGlobalPrefix: true,
-  });
+  SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
