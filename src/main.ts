@@ -17,9 +17,15 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
 
+  const allowedOrigins = process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+    : ['https://telegram-web-app-ui.vercel.app'];
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? '*',
-    credentials: true,
+    origin: allowedOrigins,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true
   });
 
   
