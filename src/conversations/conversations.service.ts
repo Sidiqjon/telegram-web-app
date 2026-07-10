@@ -19,6 +19,7 @@ export class ConversationsService {
       throw new NotFoundException('User not found');
     }
 
+
     // Look for a conversation that has exactly these two participants
     const existing = await this.prisma.conversation.findFirst({
       where: {
@@ -27,7 +28,10 @@ export class ConversationsService {
           { participants: { some: { userId: participantId } } },
         ],
       },
-      include: { participants: { include: { user: true } } },
+      include: {
+        participants: { include: { user: true } },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     });
 
     if (existing) {
