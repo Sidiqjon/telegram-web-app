@@ -6,12 +6,6 @@ import { ImageKitService } from '../imagekit/imagekit.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { PaginationDto } from './dto/pagination.dto';
 
-/**
- * These events decouple message persistence (REST or Socket-triggered) from
- * realtime broadcasting. ChatGateway subscribes to them and pushes to sockets,
- * so it doesn't matter whether a message was created via HTTP or via a socket
- * event — the realtime fan-out logic lives in exactly one place.
- */
 export const MESSAGE_CREATED_EVENT = 'message.created';
 export const MESSAGE_UPDATED_EVENT = 'message.updated';
 export const MESSAGE_DELETED_EVENT = 'message.deleted';
@@ -52,6 +46,7 @@ export class MessagesService {
     const uploaded = await this.imageKit.uploadFile(
       file.buffer,
       type === MessageType.IMAGE ? 'messages/images' : 'messages/files',
+      file.originalname,
     );
 
     const message = await this.prisma.message.create({

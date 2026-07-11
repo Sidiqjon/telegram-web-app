@@ -47,7 +47,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     // Upload the new avatar first
-    const uploaded = await this.imageKit.uploadFile(file.buffer, 'avatars');
+    const uploaded = await this.imageKit.uploadFile(file.buffer, 'avatars', file.originalname);
 
     // Then remove the previous one, if any, so we don't leak storage
     if (user.avatarPublicId) {
